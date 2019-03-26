@@ -1,4 +1,4 @@
-# leaflet.glify
+# leafgl
 
 An R package for fast web gl rendering of features on leaflet maps.
 It's an R port of https://github.com/robertleeplummerjr/Leaflet.glify where 
@@ -12,7 +12,7 @@ what you get here, make sure to star the original repo!
 Currently not on CRAN, github only:
 
 ```r
-devtools::install_github("tim-salabim/leaflet.glify")
+devtools::install_github("r-spatial/leafgl")
 ```
 
 ### What does it do?
@@ -30,7 +30,7 @@ vertices.
 With regard to 2., obviously the amount of RAM will matter most but
 there are other, more suptle, problems that can occur. 
 
-Given it's name, leaflet.glify is intended to fully integrate with the 
+Given it's name, leafgl is intended to fully integrate with the 
 leaflet package, though it is very likely that it won't be a 1:1
 replacement for the respective `leaflet::add*` functions. For example, 
 given the intention to render/visualise as many features as possible we
@@ -58,7 +58,7 @@ implementation.
 Depending on your operating system and browser, you may
 see some weird colors that do not correspond to the ones that you
 specified. The only known work-around at this stage is to set `opacity = 1`. 
-For more details the inclined reader is referred to [this issue](https://github.com/tim-salabim/leaflet.glify/issues/4)
+For more details the inclined reader is referred to [this issue](https://github.com/r-spatial/leafgl/issues/4)
 
 ### What can I do to help?
 
@@ -79,7 +79,7 @@ This will render 1 Mio. points on a standard leaflet map.
 ```r
 library(mapview)
 library(leaflet)
-library(leaflet.glify)
+library(leafgl)
 library(sf)
 
 n = 1e6
@@ -95,7 +95,7 @@ options(viewer = NULL) # view in browser
 system.time({
   m = leaflet() %>%
     addProviderTiles(provider = providers$CartoDB.DarkMatter) %>%
-    addGlifyPoints(data = pts, group = "pts") %>%
+    addGlPoints(data = pts, group = "pts") %>%
     addMouseCoordinates() %>%
     setView(lng = 10.5, lat = 49.5, zoom = 6) %>% 
     addLayersControl(overlayGroups = "pts")
@@ -117,7 +117,7 @@ voctors in the blink of an eye!
 ```r
 library(mapview)
 library(leaflet)
-library(leaflet.glify)
+library(leafgl)
 library(sf)
 library(colourvalues)
 
@@ -136,7 +136,7 @@ options(viewer = NULL)
 system.time({
   m = leaflet() %>%
     addProviderTiles(provider = providers$CartoDB.DarkMatter) %>%
-    addGlifyPoints(data = pts, color = cols, group = "pts") %>%
+    addGlPoints(data = pts, color = cols, group = "pts") %>%
     addMouseCoordinates() %>%
     setView(lng = 10.5, lat = 49.5, zoom = 6) %>% 
     addLayersControl(overlayGroups = "pts")
@@ -159,7 +159,7 @@ This data was downloaded from https://download.geofabrik.de/europe/switzerland.h
 ```r
 library(mapview)
 library(leaflet)
-library(leaflet.glify)
+library(leafgl)
 library(sf)
 library(colourvalues)
 
@@ -174,7 +174,7 @@ cols = colour_values_rgb(ch_lu$type, include_alpha = FALSE) / 255
 system.time({
   m = leaflet() %>%
     addProviderTiles(provider = providers$CartoDB.DarkMatter) %>%
-    addGlifyPolygons(data = ch_lu, 
+    addGlPolygons(data = ch_lu, 
                      color = cols, 
                      popup = "type",
                      group = "pols") %>%
@@ -194,13 +194,35 @@ m
 
 ## Shiny ##
 
-In order to use leaflet.glify in a shiny context, we need to include the
-necessary javascript dependencies in the ui component. Here's an example:
+Thanks to [@ColinFay](https://github.com/ColinFay) `leafgl` has dedicated shiny functions. Given that what `leafgl` produces is a `leaflet` map, we only need to
+use `leafglOutput` in our `ui` call. In the `server` call we can simply use `renderLeaflet`. Here an example:
 
 ```r
+library(mapview)
+library(leaflet)
+library(leafgl)
+library(sf)
+library(shiny)
+
+n = 1e6
+
+df1 = data.frame(id = 1:n,
+                 x = rnorm(n, 10, 3),
+                 y = rnorm(n, 49, 1.8))
+
+pts = st_as_sf(df1, coords = c("x", "y"), crs = 4326)
+
+options(viewer = NULL) # view in browser
+
+m = leaflet() %>%
+  addProviderTiles(provider = providers$CartoDB.DarkMatter) %>%
+  addGlPoints(data = pts, group = "pts") %>%
+  addMouseCoordinates() %>%
+  setView(lng = 10.5, lat = 49.5, zoom = 4) %>% 
+  addLayersControl(overlayGroups = "pts")
+
 ui <- fluidPage(
-  leafletOutput("mymap"),
-  tags$script(leaflet.glify:::glifyDependencies())
+  leafglOutput("mymap")
 )
 
 server <- function(input, output, session) {
@@ -216,4 +238,4 @@ shinyApp(ui, server)
 
 ## Contact ##
 
-Please file Pull requests, bug reports and feature requests at https://github.com/tim-salabim/leaflet.glify/issues
+Please file Pull requests, bug reports and feature requests at https://github.com/r-spatial/leafgl/issues

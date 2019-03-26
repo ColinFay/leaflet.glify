@@ -1,14 +1,14 @@
-#' add polygons/polygons to a leaflet map using Leaflet.glify
+#' add polygons to a leaflet map using Leaflet.glify
 #'
 #' @details
-#'   Multipolygons are currently not supported! Make sure you cast your data
-#'   to polygons first (e.g. using \code{sf::st_cast(data, "POLYGON")}.
+#'   MULTIPOLYGONs are currently not supported! Make sure you cast your data
+#'   to POLYGON first (e.g. using \code{sf::st_cast(data, "POLYGON")}.
 #'
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' library(mapview)
 #' library(leaflet)
-#' library(leaflet.glify)
+#' library(leafgl)
 #' library(sf)
 #' library(colourvalues)
 #'
@@ -20,28 +20,28 @@
 #'
 #' leaflet() %>%
 #'   addProviderTiles(provider = providers$CartoDB.DarkMatter) %>%
-#'   addGlifyPolygons(data = fran, color = cols) %>%
+#'   addGlPolygons(data = fran, color = cols, popup = "NAME_ASCI") %>%
 #'   addMouseCoordinates() %>%
 #'   setView(lng = 10.5, lat = 49.5, zoom = 8)
 #' }
 #'
-#' @describeIn addGlifyPoints add polygons to a leaflet map using Leaflet.glify
-#' @aliases addGlifyPolygons
-#' @export addGlifyPolygons
-addGlifyPolygons = function(map,
-                            data,
-                            color = cbind(0, 0.2, 1),
-                            opacity = 0.6,
-                            weight = 10,
-                            group = "glpolygons",
-                            popup = NULL,
-                            ...) {
+#' @describeIn addGlPoints add polygons to a leaflet map using Leaflet.glify
+#' @aliases addGlPolygons
+#' @export addGlPolygons
+addGlPolygons = function(map,
+                         data,
+                         color = cbind(0, 0.2, 1),
+                         opacity = 0.6,
+                         group = "glpolygons",
+                         popup = NULL,
+                         ...) {
 
   if (is.null(group)) group = deparse(substitute(data))
   if (inherits(data, "Spatial")) data <- sf::st_as_sf(data)
   stopifnot(inherits(sf::st_geometry(data), c("sfc_POLYGON", "sfc_MULTIPOLYGON")))
   if (inherits(sf::st_geometry(data), "sfc_MULTIPOLYGON"))
-    stop("Can only handle POLYGONs, please cast your MULTIPOLYGON to POLYGON using sf::st_cast")
+    stop("Can only handle POLYGONs, please cast your MULTIPOLYGON to POLYGON using sf::st_cast",
+         call. = FALSE)
 
   # data
   if (is.null(popup)) {
@@ -51,7 +51,7 @@ addGlifyPolygons = function(map,
     data = sf::st_transform(data[, popup], crs = 4326)
   }
 
-  data = geojsonsf::sf_geojson(data)
+  data = geojsonsf::sf_geojson(data, ...)
 
   # color
   if (ncol(color) != 3) stop("only 3 column color matrix supported so far")
@@ -59,7 +59,7 @@ addGlifyPolygons = function(map,
   colnames(color) = c("r", "g", "b")
 
   # cols = jsonlite::toJSON(color)
-  cols = jsonify::to_json(color)
+  cols = jsonify::to_json(color, digits = 3)
 
   # dependencies
   map$dependencies = c(
@@ -68,20 +68,20 @@ addGlifyPolygons = function(map,
   )
 
   leaflet::invokeMethod(map, leaflet::getMapData(map), 'addGlifyPolygons',
-                        data, cols, popup, opacity, weight, group)
+                        data, cols, popup, opacity, group)
 
 }
 
 
 ### via src
-addGlifyPolygonsSrc = function(map,
-                               data,
-                               color = cbind(0, 0.2, 1),
-                               opacity = 0.6,
-                               weight = 10,
-                               group = "glpolygons",
-                               popup = NULL,
-                               ...) {
+addGlPolygonsSrc = function(map,
+                            data,
+                            color = cbind(0, 0.2, 1),
+                            opacity = 0.6,
+                            weight = 10,
+                            group = "glpolygons",
+                            popup = NULL,
+                            ...) {
 
   if (is.null(group)) group = deparse(substitute(data))
   if (inherits(data, "Spatial")) data <- sf::st_as_sf(data)
@@ -110,7 +110,7 @@ addGlifyPolygonsSrc = function(map,
   fl_data = paste0(dir_data, "/", group, "_data.json")
   pre = paste0('var data = data || {}; data["', group, '"] = ')
   writeLines(pre, fl_data)
-  cat('[', geojsonsf::sf_geojson(data), '];',
+  cat('[', geojsonsf::sf_geojson(data, ...), '];',
       file = fl_data, sep = "", append = TRUE)
 
   # color
@@ -121,7 +121,7 @@ addGlifyPolygonsSrc = function(map,
   fl_color = paste0(dir_color, "/", group, "_color.json")
   pre = paste0('var col = col || {}; col["', group, '"] = ')
   writeLines(pre, fl_color)
-  cat('[', jsonlite::toJSON(color), '];',
+  cat('[', jsonify::to_json(color, digits = 3), '];',
       file = fl_color, append = TRUE)
 
   # popup
@@ -156,14 +156,14 @@ addGlifyPolygonsSrc = function(map,
 
 
 ### via attachments
-addGlifyPolygonsFl = function(map,
-                              data,
-                              color = cbind(0, 0.2, 1),
-                              opacity = 0.6,
-                              weight = 10,
-                              group = "glpolygons",
-                              popup = NULL,
-                              ...) {
+addGlPolygonsFl = function(map,
+                           data,
+                           color = cbind(0, 0.2, 1),
+                           opacity = 0.6,
+                           weight = 10,
+                           group = "glpolygons",
+                           popup = NULL,
+                           ...) {
 
   if (is.null(group)) group = deparse(substitute(data))
   if (inherits(data, "Spatial")) data <- sf::st_as_sf(data)
@@ -198,7 +198,7 @@ addGlifyPolygonsFl = function(map,
   color = as.data.frame(color, stringsAsFactors = FALSE)
   colnames(color) = c("r", "g", "b")
 
-  jsn = jsonlite::toJSON(color)
+  jsn = jsonify::to_json(color)
   fl_color = paste0(dir_color, "/", group, "_color.json")
   color_var = paste0(group, "cl")
   cat(jsn, file = fl_color, append = FALSE)
@@ -229,6 +229,6 @@ addGlifyPolygonsFl = function(map,
   # }
 
   leaflet::invokeMethod(map, leaflet::getMapData(map), 'addGlifyPolygonsFl',
-                        data_var, color_var, popup, opacity, weight)
+                        data_var, color_var, popup, opacity)
 
 }

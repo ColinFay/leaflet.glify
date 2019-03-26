@@ -1,4 +1,4 @@
-LeafletWidget.methods.addGlifyPolygons = function(data, cols, popup, opacity, group) {
+LeafletWidget.methods.addGlifyPolylines = function(data, cols, popup, opacity, group) {
 
   var map = this;
 
@@ -12,7 +12,7 @@ LeafletWidget.methods.addGlifyPolygons = function(data, cols, popup, opacity, gr
     var pop;
     if (popup) {
         pop = function (e, feature) {
-          if (map.hasLayer(shapeslayer.glLayer)) {
+          if (map.hasLayer(lineslayer.glLayer)) {
             L.popup()
               .setLatLng(e.latlng)
               .setContent(feature.properties[[popup]].toString())
@@ -26,8 +26,10 @@ LeafletWidget.methods.addGlifyPolygons = function(data, cols, popup, opacity, gr
         pop = null;
     }
 
-    var shapeslayer = L.glify.shapes({
+    var lineslayer = L.glify.lines({
       map: map,
+      latitudeKey: 1,
+      longitudeKey: 0,
       click: pop,
       data: data,
       color: clrs,
@@ -35,6 +37,6 @@ LeafletWidget.methods.addGlifyPolygons = function(data, cols, popup, opacity, gr
       className: group
     });
 
-  map.layerManager.addLayer(shapeslayer.glLayer, null, null, group);
+  map.layerManager.addLayer(lineslayer.glLayer, null, null, group);
 
 };

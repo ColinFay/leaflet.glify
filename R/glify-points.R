@@ -1,4 +1,4 @@
-#' add points/polygons to a leaflet map using Leaflet.glify
+#' add points to a leaflet map using Leaflet.glify
 #'
 #' @description
 #'   Leaflet.glify is a web gl renderer plugin for leaflet. See
@@ -15,12 +15,12 @@
 #' @param popup the name of the column in data to be used for popups.
 #' @param ... ignored.
 #'
-#' @describeIn addGlifyPoints add points to a leaflet map using Leaflet.glify
+#' @describeIn addGlPoints add points to a leaflet map using Leaflet.glify
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' library(mapview)
 #' library(leaflet)
-#' library(leaflet.glify)
+#' library(leafgl)
 #' library(sf)
 #' library(colourvalues)
 #' library(jsonlite)
@@ -39,7 +39,7 @@
 #' system.time({
 #'   m = leaflet() %>%
 #'     addProviderTiles(provider = providers$CartoDB.DarkMatter) %>%
-#'     addGlifyPoints(data = pts, color = cols, popup = "id") %>%
+#'     addGlPoints(data = pts, color = cols, popup = "id") %>%
 #'     addMouseCoordinates() %>%
 #'     setView(lng = 10.5, lat = 49.5, zoom = 9)
 #' })
@@ -47,15 +47,15 @@
 #' m
 #' }
 #'
-#' @export
-addGlifyPoints = function(map,
-                          data,
-                          color = cbind(0, 0.2, 1),
-                          opacity = 1,
-                          weight = 10,
-                          group = "glpoints",
-                          popup = NULL,
-                          ...) {
+#' @export addGlPoints
+addGlPoints = function(map,
+                       data,
+                       color = cbind(0, 0.2, 1),
+                       opacity = 1,
+                       weight = 10,
+                       group = "glpoints",
+                       popup = NULL,
+                       ...) {
 
   if (is.null(group)) group = deparse(substitute(data))
   if (inherits(data, "Spatial")) data <- sf::st_as_sf(data)
@@ -82,7 +82,7 @@ addGlifyPoints = function(map,
 
   # convert data to json
   # data = jsonlite::toJSON(crds, digits = 7)
-  data = jsonify::to_json(crds)
+  data = jsonify::to_json(crds, ...)
 
   # dependencies
   map$dependencies = c(
@@ -96,14 +96,14 @@ addGlifyPoints = function(map,
 }
 
 ### via src
-addGlifyPointsSrc = function(map,
-                            data,
-                            color = cbind(0, 0.2, 1),
-                            opacity = 1,
-                            weight = 10,
-                            group = "glpoints",
-                            popup = NULL,
-                            ...) {
+addGlPointsSrc = function(map,
+                          data,
+                          color = cbind(0, 0.2, 1),
+                          opacity = 1,
+                          weight = 10,
+                          group = "glpoints",
+                          popup = NULL,
+                          ...) {
 
   if (is.null(group)) group = deparse(substitute(data))
   if (inherits(data, "Spatial")) data <- sf::st_as_sf(data)
@@ -135,7 +135,7 @@ addGlifyPointsSrc = function(map,
   fl_color = paste0(dir_color, "/", group, "_color.json")
   pre = paste0('var col = col || {}; col["', group, '"] = ')
   writeLines(pre, fl_color)
-  cat('[', jsonlite::toJSON(color), '];',
+  cat('[', jsonify::to_json(color), '];',
       file = fl_color, append = TRUE)
 
   # popup
@@ -143,7 +143,7 @@ addGlifyPointsSrc = function(map,
     fl_popup = paste0(dir_popup, "/", group, "_popup.json")
     pre = paste0('var popup = popup || {}; popup["', group, '"] = ')
     writeLines(pre, fl_popup)
-    cat('[', jsonlite::toJSON(data[[popup]]), '];',
+    cat('[', jsonify::to_json(data[[popup]]), '];',
         file = fl_popup, append = TRUE)
   } else {
     popup = NULL
@@ -171,14 +171,14 @@ addGlifyPointsSrc = function(map,
 
 
 ### via src
-addGlifyPointsSrc2 = function(map,
-                              data,
-                              color = cbind(0, 0.2, 1),
-                              opacity = 1,
-                              weight = 10,
-                              group = "glpoints",
-                              popup = NULL,
-                              ...) {
+addGlPointsSrc2 = function(map,
+                           data,
+                           color = cbind(0, 0.2, 1),
+                           opacity = 1,
+                           weight = 10,
+                           group = "glpoints",
+                           popup = NULL,
+                           ...) {
 
   if (is.null(group)) group = deparse(substitute(data))
   if (inherits(data, "Spatial")) data <- sf::st_as_sf(data)
@@ -203,11 +203,11 @@ addGlifyPointsSrc2 = function(map,
   fl_data2 = paste0(dir_data, "/", grp2, "_data.json")
   pre1 = paste0('var data = data || {}; data["', grp1, '"] = ')
   writeLines(pre1, fl_data1)
-  cat('[', jsonify::to_json(crds[1:100, ]), '];',
+  cat('[', jsonify::to_json(crds[1:100, ], ...), '];',
       file = fl_data1, sep = "", append = TRUE)
   pre2 = paste0('var data = data || {}; data["', grp2, '"] = ')
   writeLines(pre2, fl_data2)
-  cat('[', jsonify::to_json(crds[101:nrow(crds), ]), '];',
+  cat('[', jsonify::to_json(crds[101:nrow(crds), ], ...), '];',
       file = fl_data2, sep = "", append = TRUE)
 
   # color
@@ -218,7 +218,7 @@ addGlifyPointsSrc2 = function(map,
   fl_color = paste0(dir_color, "/", group, "_color.json")
   pre = paste0('var col = col || {}; col["', group, '"] = ')
   writeLines(pre, fl_color)
-  cat('[', jsonlite::toJSON(color), '];',
+  cat('[', jsonify::to_json(color), '];',
       file = fl_color, append = TRUE)
 
   # popup
@@ -226,7 +226,7 @@ addGlifyPointsSrc2 = function(map,
     fl_popup = paste0(dir_popup, "/", group, "_popup.json")
     pre = paste0('var popup = popup || {}; popup["', group, '"] = ')
     writeLines(pre, fl_popup)
-    cat('[', jsonlite::toJSON(data[[popup]]), '];',
+    cat('[', jsonify::to_json(data[[popup]]), '];',
         file = fl_popup, append = TRUE)
   } else {
     popup = NULL
@@ -237,7 +237,7 @@ addGlifyPointsSrc2 = function(map,
     map$dependencies,
     glifyDependenciesSrc(),
     glifyDataAttachmentSrc(fl_data1, grp1),
-    glifyDataAttachmentSrc(fl_data2, grp2),
+    glifyDataAttachmentSrc(fl_data2, grp1, TRUE),
     glifyColorAttachmentSrc(fl_color, group)
   )
 
@@ -256,14 +256,14 @@ addGlifyPointsSrc2 = function(map,
 
 
 ### via attachments
-addGlifyPointsFl = function(map,
-                          data,
-                          color = cbind(0, 0.2, 1),
-                          opacity = 1,
-                          weight = 10,
-                          group = "glpoints",
-                          popup = NULL,
-                          ...) {
+addGlPointsFl = function(map,
+                         data,
+                         color = cbind(0, 0.2, 1),
+                         opacity = 1,
+                         weight = 10,
+                         group = "glpoints",
+                         popup = NULL,
+                         ...) {
 
   if (is.null(group)) group = deparse(substitute(data))
   if (inherits(data, "Spatial")) data <- sf::st_as_sf(data)
@@ -282,7 +282,7 @@ addGlifyPointsFl = function(map,
   crds = sf::st_coordinates(data)[, c(2, 1)]
 
   fl_data = paste0(dir_data, "/", group, "_data.json")
-  cat(jsonlite::toJSON(crds, digits = 7), file = fl_data, append = FALSE)
+  cat(jsonify::to_json(crds, digits = 7), file = fl_data, append = FALSE)
   data_var = paste0(group, "dt")
 
   # color
@@ -290,14 +290,14 @@ addGlifyPointsFl = function(map,
   color = as.data.frame(color, stringsAsFactors = FALSE)
   colnames(color) = c("r", "g", "b")
 
-  jsn = jsonlite::toJSON(color)
+  jsn = jsonify::to_json(color)
   fl_color = paste0(dir_color, "/", group, "_color.json")
   color_var = paste0(group, "cl")
   cat(jsn, file = fl_color, append = FALSE)
 
   # popup
   if (!is.null(popup)) {
-    pop = jsonlite::toJSON(data[[popup]])
+    pop = jsonify::to_json(data[[popup]])
     fl_popup = paste0(dir_popup, "/", group, "_popup.json")
     popup_var = paste0(group, "pop")
     cat(pop, file = fl_popup, append = FALSE)
